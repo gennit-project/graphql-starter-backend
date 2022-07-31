@@ -6,7 +6,7 @@ const neo4j = require("neo4j-driver");
 const password = process.env.NEO4J_PASSWORD;
 
 const driver = neo4j.driver(
-  "bolt://localhost:7687",
+  "neo4j://localhost:7687",
   neo4j.auth.basic("neo4j", password)
 );
 
@@ -29,20 +29,21 @@ const typeDefs = gql`
     address:               String
     virtualEventUrl:       String
     Poster:                User!             @relationship(type: "POSTED_BY", direction: OUT)
-    updatedAt:             DateTime!         @timestamp(operations: [UPDATE])
+    updatedAt:             DateTime          @timestamp(operations: [UPDATE])
     createdAt:             DateTime!         @timestamp(operations: [CREATE])
     placeId:               String
     isInPrivateResidence:  Boolean 
     cost:                  String
     location:              Point
-    canceled:              Boolean! 
+    canceled:              Boolean!
+    deleted:               Boolean
     Tags:                  [Tag]             @relationship(type: "HAS_TAG", direction: OUT)
     # PastVersions:          [EventVersion]    @relationship(type: "HAS_VERSION", direction: OUT)
   }
 
   type Channel {
     description:              String 
-    name:                     String!
+    name:                     String
     uniqueName:               String! @unique
     Admins:                   [User]                 @relationship(type: "ADMIN_OF_CHANNEL", direction: IN)
     Moderators:               [User]                 @relationship(type: "MODERATOR_OF_CHANNEL", direction: IN)
@@ -56,6 +57,7 @@ const typeDefs = gql`
     # ModerationDashboard:      ModerationDashboard    @relationship(type: "HAS_MODERATION_DASHBOARD", direction: OUT)
     # Rules:                    [Rule]                 @relationship(type: "HAS_RULE", direction: OUT)
     locked:                   Boolean
+    deleted:                  Boolean
     SuspendedUsers:           [User]                 @relationship(type: "SUSPENDED_FROM_CHANNEL", direction: IN)
     Comments:                 [Comment!]             @relationship(type: "HAS_COMMENT", direction: OUT)
     CommentSections:          [CommentSection!]      @relationship(type: "HAS_COMMENT_SECTION", direction: OUT)
@@ -96,6 +98,7 @@ const typeDefs = gql`
     # IssueComments:           [IssueComment]        @relationship(type: "AUTHORED_ISSUE_COMMENT", direction: OUT)
     SuspendedFromChannels:   [Channel]             @relationship(type: "SUSPENDED_FROM_CHANNEL", direction: OUT)
     suspendedFromServer:      Boolean
+    deleted:                  Boolean
   }
 
   type Discussion {
@@ -105,13 +108,14 @@ const typeDefs = gql`
     Channels:                [Channel!]!             @relationship(type: "POSTED_IN_CHANNEL", direction: OUT)
     title:                   String!
     createdAt:               DateTime!               @timestamp(operations: [CREATE])
-    updatedAt:               DateTime!               @timestamp(operations: [UPDATE])
+    updatedAt:               DateTime               @timestamp(operations: [UPDATE])
     # Flairs:                  [Flair]                 @relationship(type: "HAS_FLAIR", direction: OUT)
     Tags:                    [Tag]                   @relationship(type: "HAS_TAG", direction: OUT)
     UpvotedByUsers:          [User]                  @relationship(type: "UPVOTED_DISCUSSION", direction: IN)
     # DownvotedByModerators:   [ModerationProfile]     @relationship(type: "DOWNVOTED_DISCUSSION", direction: IN)
     # PastVersions:            [DiscussionVersion]     @relationship(type: "HAS_VERSION", direction: OUT)
     CommentSections:         [CommentSection!]       @relationship(type: "HAS_COMMENTS_IN", direction: OUT)
+    deleted:                 Boolean
   }
   
   union OriginalPost = Discussion | Event
@@ -137,7 +141,7 @@ const typeDefs = gql`
     isRootComment:           Boolean!
     ChildComments:           [Comment]               @relationship(type: "IS_REPLY_TO", direction: IN)
     deleted:                 Boolean
-    updatedAt:               DateTime!               @timestamp(operations: [UPDATE])
+    updatedAt:               DateTime               @timestamp(operations: [UPDATE])
     createdAt:               DateTime!               @timestamp(operations: [CREATE])
     # Emoji:                   [Emoji]                 @relationship(type: "HAS_EMOJI", direction: OUT)
     Tags:                    [Tag]                   @relationship(type: "HAS_TAG", direction: OUT)
@@ -154,6 +158,7 @@ const typeDefs = gql`
     Owner:                 User                   @relationship(type: "CREATED_FEED", direction: IN)
     # Sources:               [Source]
     Tags:                  [Tag]                  @relationship(type: "HAS_TAG", direction: OUT)
+    deleted:               Boolean
   }
   type Tag {
     text:                  String! @unique
