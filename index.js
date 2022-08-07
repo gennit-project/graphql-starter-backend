@@ -25,7 +25,6 @@ const typeDefs = gql`
 
   type User {
     username:                String! @unique
-    Comments:                [Comment!]           @relationship(type: "AUTHORED_COMMENT", direction: OUT)
     Posts:                   [Post!]             @relationship(type: "POSTED_BY", direction: IN)
     createdAt:               DateTime!            @timestamp(operations: [CREATE])
     deleted:                 Boolean
@@ -43,6 +42,10 @@ neoSchema.assertIndexesAndConstraints({ options: { create: true } })
   .then(() => {
     const server = new ApolloServer({
       schema: neoSchema.schema,
+      context: params => () => {
+        console.log(`Query: ${params.req.body.query}`);
+        console.log(`Variables: ${params.req.body.variables}`);
+      }
     });
 
     server.listen().then(({ url }) => {
