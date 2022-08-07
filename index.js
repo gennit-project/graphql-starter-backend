@@ -12,11 +12,10 @@ const driver = neo4j.driver(
 
 const typeDefs = gql`
 
-    type Post {
+  type Post {
     id:                    ID! @id
     title:                 String!
     description:           String
-    CommentSections:       [CommentSection!] @relationship(type: "HAS_COMMENTS_IN", direction: OUT)
     Poster:                User!             @relationship(type: "POSTED_BY", direction: OUT)
     updatedAt:             DateTime          @timestamp(operations: [UPDATE])
     createdAt:             DateTime!         @timestamp(operations: [CREATE])
@@ -31,31 +30,10 @@ const typeDefs = gql`
     createdAt:               DateTime!            @timestamp(operations: [CREATE])
     deleted:                 Boolean
   }
-  
-  type CommentSection {
-    id:                       ID! @id
-    Comments:                 [Comment]               @relationship(type: "CONTAINS_COMMENT", direction: OUT)
-    Post:                     Post           @relationship(type: "HAS_COMMENTS_IN", direction: IN)
-  }
-  
-  type Comment {
-    id:                      ID! @id
-    CommentAuthor:           User                    @relationship(type: "AUTHORED_COMMENT", direction: IN)
-    CommentSection:          CommentSection          @relationship(type: "CONTAINS_COMMENT", direction: IN)
-    ParentComment:           Comment                 @relationship(type: "IS_REPLY_TO", direction: OUT)
-    text:                    String
-    isRootComment:           Boolean!
-    ChildComments:           [Comment]               @relationship(type: "IS_REPLY_TO", direction: IN)
-    deleted:                 Boolean
-    updatedAt:               DateTime               @timestamp(operations: [UPDATE])
-    createdAt:               DateTime!               @timestamp(operations: [CREATE])
-    Tags:                    [Tag]                   @relationship(type: "HAS_TAG", direction: OUT)
-  }
 
   type Tag {
     text:                  String! @unique
     Posts:                [Post]                 @relationship(type: "HAS_TAG", direction: IN)
-    Comments:              [Comment]               @relationship(type: "HAS_TAG", direction: IN)
   }
 `;
 
