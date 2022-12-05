@@ -21,6 +21,7 @@ const typeDefs = gql`
     createdAt:             DateTime!         @timestamp(operations: [CREATE])
     deleted:               Boolean
     Tags:                  [Tag]             @relationship(type: "HAS_TAG", direction: OUT)
+    Comments:              [Comment]         @relationship(type: "CONTAINS_COMMENT", direction: OUT)
   }
 
   type User {
@@ -34,9 +35,30 @@ const typeDefs = gql`
     text:                  String! @unique
     Posts:                [Post]                 @relationship(type: "HAS_TAG", direction: IN)
   }
+
+  type Comment {
+    id:                      ID! @id
+    Author:                  User                    @relationship(type: "AUTHORED_COMMENT", direction: IN)
+    Post:                    Post                    @relationship(type: "CONTAINS_COMMENT", direction: IN)
+    ParentComment:           Comment                 @relationship(type: "IS_REPLY_TO", direction: OUT)
+    text:                    String
+    isRootComment:           Boolean!
+    ChildComments:           [Comment]               @relationship(type: "IS_REPLY_TO", direction: IN)
+    deleted:                 Boolean
+    updatedAt:               DateTime               @timestamp(operations: [UPDATE])
+    createdAt:               DateTime!               @timestamp(operations: [CREATE])
+    # Emoji:                   [Emoji]                 @relationship(type: "HAS_EMOJI", direction: OUT)
+    Tags:                    [Tag]                   @relationship(type: "HAS_TAG", direction: OUT)
+  }
 `;
 
-const neoSchema = new Neo4jGraphQL({ typeDefs, driver, config: { enableRegex: true } });
+const neoSchema = new Neo4jGraphQL({
+  typeDefs,
+  driver,
+  config: {
+    enableRegex: true
+  }
+});
 
 neoSchema.assertIndexesAndConstraints({ options: { create: true } })
   .then(() => {
@@ -44,7 +66,7 @@ neoSchema.assertIndexesAndConstraints({ options: { create: true } })
       schema: neoSchema.schema,
       context: params => () => {
         console.log(`Query: ${params.req.body.query}`);
-        console.log(`Variables: ${params.req.body.variables}`);
+        console.log(`Variables: ${JSON.stringify(params.req.body.variables, null, 2)}`);
       }
     });
 
